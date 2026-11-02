@@ -6,7 +6,7 @@
 - 面向大屏 / 投影仪，arm64-v8a，Android 8.0+
 - 现成安装包见 [Releases](../../releases)
 
-> 本仓库是私有仓库。`libfqapi_core.so` 提取自第三方商业 APK，仅作个人设备上的兼容用途，请勿分发。
+> `prebuilt/` 下的 `libfanqie_shim.so` 由第三方商业 APK 的 Rust 核心编译而来。仓库公开只为方便自己多设备构建和备份，不构成对该核心的任何分发授权，请勿商用或二次分发。
 
 ## 和上游的区别
 
