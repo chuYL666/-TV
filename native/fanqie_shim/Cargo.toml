@@ -1,0 +1,18 @@
+[package]
+name = "fanqie_shim"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "C ABI bootstrap for the fqapi core loopback server (embedded in the fanqie app)"
+
+[lib]
+name = "fanqie_shim"
+crate-type = ["cdylib"]
+
+[dependencies]
+fqapi_core = { path = "../fqapp/rust" }
+tokio = { version = "1", features = ["rt-multi-thread", "time"] }
+
+[profile.release]
+strip = true
+lto = false
