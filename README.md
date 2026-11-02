@@ -1,4 +1,4 @@
-# 番茄 TV · 番茄短剧大屏版
+# fqAPP-tv版
 
 基于 [guoapp](https://github.com/Xanerix/guoapp)（真果鉴）改造的 Android TV 短剧应用，把**番茄短剧**接成了内置站源，遥控器全流程可用。
 
