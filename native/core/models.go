@@ -104,4 +104,6 @@ type Task struct {
 	OutPath         string  `json:"outPath"`
 	ReleaseStatus   string  `json:"releaseStatus,omitempty"`
 	DownloadQuality int     `json:"downloadQuality,omitempty"`
+	// Quality 是本次要解析的清晰度档位（0 = 由站源决定）。
+	Quality int `json:"quality,omitempty"`
 }

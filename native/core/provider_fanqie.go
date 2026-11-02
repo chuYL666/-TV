@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -380,12 +381,18 @@ func (d *Downloader) fetchFanqieDetail(ctx context.Context, sourceID string) (Dr
 }
 
 // resolveFanqieMedia 把 vid 换成本机核心的流媒体地址。
-func (d *Downloader) resolveFanqieMedia(ctx context.Context, chapter Chapter) (providerMedia, error) {
+func (d *Downloader) resolveFanqieMedia(ctx context.Context, chapter Chapter, quality int) (providerMedia, error) {
 	vid := strings.TrimSpace(chapter.ID)
 	if vid == "" {
 		return providerMedia{}, errors.New("番茄分集 ID 无效")
 	}
-	payload, err := d.fanqieGetJSON(ctx, d.fanqieBase()+"/api/v1/videos/"+url.PathEscape(vid))
+	endpoint := d.fanqieBase() + "/api/v1/videos/" + url.PathEscape(vid)
+	if quality > 0 {
+		// 指定档位：核心会把该档下载到独立缓存文件（{vid}_{height}.mp4），
+		// 切清晰度只是重新解析到另一份缓存，不会互相覆盖。
+		endpoint += "?quality=" + strconv.Itoa(quality)
+	}
+	payload, err := d.fanqieGetJSON(ctx, endpoint)
 	if err != nil {
 		return providerMedia{}, err
 	}
@@ -407,7 +414,43 @@ func (d *Downloader) resolveFanqieMedia(ctx context.Context, chapter Chapter) (p
 	if !strings.HasPrefix(videoURL, "http://") && !strings.HasPrefix(videoURL, "https://") {
 		videoURL = d.fanqieBase() + "/" + strings.TrimLeft(videoURL, "/")
 	}
-	return providerMedia{URL: videoURL, Referer: d.fanqieBase() + "/"}, nil
+	media := providerMedia{URL: videoURL, Referer: d.fanqieBase() + "/"}
+	// 核心按“高→低”下发全量档位；单档（甚至空）意味着源本身没有清晰度可选，
+	// 此时保持 Quality 为 0，客户端只显示「自动」，不会造出假的选项。
+	if heights := fanqieVariantHeights(payload); len(heights) > 1 {
+		media.QualityOptions = heights
+		// 只在“确实指定了档位”时标注当前档位；自动档保持 0，
+		// 客户端才会显示「自动」而不是把默认流说成某个具体分辨率。
+		media.Quality = int(mapFloat(payload, "quality"))
+	}
+	return media, nil
+}
+
+// fanqieVariantHeights 提取清晰度档位（按短边像素，如 1080/720/540/480/360），
+// 去重后由高到低排列。
+func fanqieVariantHeights(payload map[string]any) []int {
+	rows, _ := payload["variants"].([]any)
+	seen := map[int]bool{}
+	heights := make([]int, 0, len(rows))
+	for _, row := range rows {
+		entry, _ := row.(map[string]any)
+		if entry == nil {
+			continue
+		}
+		height := int(mapFloat(entry, "height"))
+		if width := int(mapFloat(entry, "width")); width > 0 && height > width {
+			height = width // 竖屏剧按短边算档位
+		} else if height <= 0 {
+			height = width
+		}
+		if height <= 0 || seen[height] {
+			continue
+		}
+		seen[height] = true
+		heights = append(heights, height)
+	}
+	sort.Sort(sort.Reverse(sort.IntSlice(heights)))
+	return heights
 }
 
 // fanqieHelperTypes: 小工具，集中在一处便于复查。

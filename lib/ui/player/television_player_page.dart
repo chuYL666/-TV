@@ -15,6 +15,7 @@ import 'danmaku_overlay.dart';
 import 'fade_presence.dart';
 import 'playback_handle.dart';
 import 'player_surface.dart';
+import 'tv_episode_panel.dart';
 
 enum _Menu { speed, quality }
 
@@ -50,6 +51,7 @@ class _TelevisionPlayerPageState extends State<TelevisionPlayerPage>
   final _danmaku = FocusNode();
   final _speed = FocusNode();
   final _quality = FocusNode();
+  final _episodesNode = FocusNode(debugLabel: 'tv-episodes');
   final _retry = FocusNode();
   final _options = <FocusNode>[];
   final _links = {for (final menu in _Menu.values) menu: LayerLink()};
@@ -60,6 +62,7 @@ class _TelevisionPlayerPageState extends State<TelevisionPlayerPage>
   Timer? _seekDisplay;
   bool _visible = true;
   bool _failed = false;
+  bool _episodePanel = false;
   _Menu? _menu;
   Duration? _seekTarget;
   Duration _seekFrom = Duration.zero;
@@ -97,6 +100,7 @@ class _TelevisionPlayerPageState extends State<TelevisionPlayerPage>
       _danmaku,
       _speed,
       _quality,
+      _episodesNode,
       _retry,
       ..._options,
     ]) {
@@ -141,6 +145,7 @@ class _TelevisionPlayerPageState extends State<TelevisionPlayerPage>
       if (!mounted ||
           !_visible ||
           _menu != null ||
+          _episodePanel ||
           !_session.player.state.playing ||
           _session.error != null) {
         return;
@@ -165,7 +170,9 @@ class _TelevisionPlayerPageState extends State<TelevisionPlayerPage>
   }
 
   void _back() {
-    if (_menu != null) {
+    if (_episodePanel) {
+      _closeEpisodes();
+    } else if (_menu != null) {
       _closeMenu();
     } else if (_visible) {
       _hide();
@@ -231,12 +238,16 @@ class _TelevisionPlayerPageState extends State<TelevisionPlayerPage>
     _previous,
     _play,
     _next,
+    if (_showEpisodes) _episodesNode,
     if (_session.danmakuSupported) _danmaku,
     _speed,
     _quality,
   ];
 
+  bool get _showEpisodes => _session.detail.episodes.length > 1;
+
   bool _enabled(FocusNode node) =>
+      node == _episodesNode && _showEpisodes ||
       node == _previous && _session.hasPrevious ||
       node == _next && _session.hasNext ||
       node == _speed && _session.ready ||
@@ -269,6 +280,26 @@ class _TelevisionPlayerPageState extends State<TelevisionPlayerPage>
     _Menu.speed => _speed,
     _Menu.quality => _quality,
   };
+
+  void _openEpisodes() {
+    _hideTimer?.cancel();
+    setState(() => _episodePanel = true);
+  }
+
+  void _closeEpisodes() {
+    if (!_episodePanel) return;
+    setState(() => _episodePanel = false);
+    _episodesNode.requestFocus();
+    _scheduleHide();
+  }
+
+  void _pickEpisode(int index) {
+    setState(() => _episodePanel = false);
+    _episodesNode.requestFocus();
+    if (index == _session.index) return;
+    unawaited(_session.play(index));
+    _reveal();
+  }
 
   void _openMenu(_Menu menu) {
     final values = _values(menu);
@@ -410,7 +441,7 @@ class _TelevisionPlayerPageState extends State<TelevisionPlayerPage>
         builder: (context, _) {
           final failed = _session.error != null;
           return PopScope(
-            canPop: failed || !_visible && _menu == null,
+            canPop: failed || !_visible && _menu == null && !_episodePanel,
             onPopInvokedWithResult: (didPop, _) {
               if (!didPop) _back();
             },
@@ -531,6 +562,14 @@ class _TelevisionPlayerPageState extends State<TelevisionPlayerPage>
                 strong: true,
               ),
               _round(_next, Icons.skip_next_rounded, '下一集', () => _episode(1)),
+              if (_showEpisodes)
+                _pill(
+                  _episodesNode,
+                  '选集',
+                  '选集（共 ${_session.detail.episodes.length} 集）',
+                  _openEpisodes,
+                  icon: Icons.grid_view_rounded,
+                ),
               const Spacer(),
               if (_session.danmakuSupported)
                 _pill(
@@ -561,6 +600,13 @@ class _TelevisionPlayerPageState extends State<TelevisionPlayerPage>
             ],
           ),
         ),
+        if (_episodePanel)
+          TvEpisodePanel(
+            episodes: _session.detail.episodes,
+            current: _session.index,
+            onPick: _pickEpisode,
+            onClose: _closeEpisodes,
+          ),
         if (menu != null)
           Positioned(
             left: 0,
@@ -873,6 +919,7 @@ class _TelevisionPlayerPageState extends State<TelevisionPlayerPage>
     String label,
     VoidCallback onPressed, {
     Color? color,
+    IconData? icon,
   }) {
     const shape = StadiumBorder();
     return _control(
@@ -886,14 +933,22 @@ class _TelevisionPlayerPageState extends State<TelevisionPlayerPage>
         padding: const EdgeInsets.symmetric(horizontal: 18),
         alignment: Alignment.center,
         decoration: _look(focused, enabled, shape, .14),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: _ink(focused, enabled, color),
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-            fontFeatures: const [FontFeature.tabularFigures()],
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          spacing: 8,
+          children: [
+            if (icon case final icon?)
+              Icon(icon, size: 18, color: _ink(focused, enabled, color)),
+            Text(
+              text,
+              style: TextStyle(
+                color: _ink(focused, enabled, color),
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -70,7 +70,7 @@ func TestFanqieProbeDetailAndPlayback(t *testing.T) {
 		t.Fatal("详情没有分集")
 	}
 	t.Logf("分集 %d 集, 第一集: %s (id=%s)", len(chapters), chapters[0].Title, chapters[0].ID)
-	media, err := d.resolveFanqieMedia(ctx, chapters[0])
+	media, err := d.resolveFanqieMedia(ctx, chapters[0], 0)
 	if err != nil {
 		t.Fatalf("播放解析失败: %v", err)
 	}
@@ -78,4 +78,16 @@ func TestFanqieProbeDetailAndPlayback(t *testing.T) {
 		t.Fatal("播放地址为空")
 	}
 	t.Logf("播放地址: %s", media.URL)
+	t.Logf("默认档位: %d, 可选档位: %v", media.Quality, media.QualityOptions)
+	if len(media.QualityOptions) > 1 {
+		low := media.QualityOptions[len(media.QualityOptions)-1]
+		picked, err := d.resolveFanqieMedia(ctx, chapters[0], low)
+		if err != nil {
+			t.Fatalf("按档位解析失败: %v", err)
+		}
+		t.Logf("指定 %dP 后档位=%d 地址=%s", low, picked.Quality, picked.URL)
+		if picked.Quality != low {
+			t.Fatalf("档位未生效: want %d, got %d", low, picked.Quality)
+		}
+	}
 }

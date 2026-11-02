@@ -786,7 +786,7 @@ func (engine *nativeEngine) nativeResolve(ctx context.Context, input nativeInput
 			return plan, err
 		}
 	}
-	task := Task{DramaID: input.Drama.ID, DramaTitle: input.Drama.Title, Chapter: input.Chapter, Index: input.Index}
+	task := Task{DramaID: input.Drama.ID, DramaTitle: input.Drama.Title, Chapter: input.Chapter, Index: input.Index, Quality: input.Quality}
 	media, err := engine.downloader.resolveProviderMedia(ctx, task)
 	if err != nil {
 		return nativePlan{}, err
