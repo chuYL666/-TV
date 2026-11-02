@@ -4,9 +4,9 @@
 
 - 包名 `com.fanqie.duanju`，应用名「番茄」
 - 面向大屏 / 投影仪，arm64-v8a，Android 8.0+
-- 现成安装包见 [Releases](../../releases)
+- 本仓库只提供源码与技术记录，**不提供安装包**，需要自行构建
 
-> `prebuilt/` 下的 `libfanqie_shim.so` 由第三方商业 APK 的 Rust 核心编译而来。仓库公开只为方便自己多设备构建和备份，不构成对该核心的任何分发授权，请勿商用或二次分发。
+> 本项目仅用于个人设备上的技术研究与自用。`prebuilt/` 下的 `libfanqie_shim.so` 由 GPL-3.0 的上游 [ch6vip/fqapp](https://github.com/ch6vip/fqapp) 的 Rust 核心编译而来，源码可从上游获取。请勿用于商业用途或对外分发安装包。
 
 ## 和上游的区别
 
@@ -101,5 +101,7 @@ panic: rustls-platform-verifier ... Expect to be initialized
 ## 许可与致谢
 
 - 上游 [Xanerix/guoapp](https://github.com/Xanerix/guoapp)，GPL-3.0，本仓库同样以 GPL-3.0 发布，见 [LICENSE](LICENSE)
-- 番茄站协议实现依赖 `fqapi_core`（from [ch6vip/fqapp](https://github.com/ch6vip/fqapp)）
+- 番茄站协议实现依赖 `fqapi_core`（[ch6vip/fqapp](https://github.com/ch6vip/fqapp)，GPL-3.0）
 - 上游说明文档保留在 [README.upstream.md](README.upstream.md)
+
+**对应源码（GPLv3 §6）**：本仓库分发的二进制——`prebuilt/arm64-v8a/libfanqie_shim.so`，以及构建产物 APK 内的 `libduanju_core.so`——其完整对应源码可分两部分获取：guoapp 与本项目的改动即本仓库，`fqapi_core` 部分见 [ch6vip/fqapp](https://github.com/ch6vip/fqapp) 的 `rust/` 目录。两者均通过公开的 GitHub 仓库提供，与本仓库同时可得。
