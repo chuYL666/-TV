@@ -84,7 +84,7 @@ cargo build --release --target aarch64-linux-android
 cp ../../target/aarch64-linux-android/release/libfanqie_shim.so ../../prebuilt/arm64-v8a/
 ```
 
-签名：`android/app/build.gradle.kts` 只在环境变量 `RELEASE_KEYSTORE_FILE` / `RELEASE_STORE_PASSWORD` / `RELEASE_KEY_ALIAS` / `RELEASE_KEY_PASSWORD` 四个都齐全时才配 `signingConfig`，缺一个就出未签名包（安装报 `INSTALL_PARSE_FAILED_NO_CERTIFICATES`）。
+签名：`android/app/build.gradle.kts` 优先读 `android/key.properties`；文件不存在时从环境变量 `ANDROID_KEYSTORE_PATH` / `ANDROID_KEYSTORE_PASSWORD` / `ANDROID_KEY_ALIAS` / `ANDROID_KEY_PASSWORD` 取，四个都齐全才配 `signingConfig`，缺一个就出未签名包（安装报 `INSTALL_PARSE_FAILED_NO_CERTIFICATES`）。
 
 ## 踩过的坑
 

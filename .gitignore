@@ -42,3 +42,6 @@ Thumbs.db
 desktop.ini
 
 /CLAUDE.md
+
+# 图标脚本的临时预览输出
+tools/icon/out/
